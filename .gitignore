@@ -1,0 +1,10 @@
+.venv/
+*.parquet
+*.pptx
+models/
+*.backup.ipynb
+*.csv
+*.json
+*.ipynb_checkpoints
+path/
+.DS_Store
