@@ -1,4 +1,7 @@
 .venv/
+__pycache__/
+data/
+results/
 *.parquet
 *.pptx
 models/
@@ -8,3 +11,4 @@ models/
 *.ipynb_checkpoints
 path/
 .DS_Store
+archive/
