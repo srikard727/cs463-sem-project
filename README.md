@@ -41,6 +41,7 @@ ahead**, using only information known on order day.
 │   └── evaluation.py                Metrics: MAE, RMSE, WAPE, bias, Poisson deviance, RMSSE, R²
 │
 ├── requirements.txt                 Exact library versions
+├── m5_data.zip                      The three raw M5 files (unzip before running 02)
 │
 │   Created by the notebooks (not in git):
 ├── data/processed/<state>/          Cleaned train / validation / test files per store
@@ -68,20 +69,23 @@ template for a state saves a copy with that state's outputs, such as
    python3 -m venv .venv
    .venv/bin/pip install -r requirements.txt
    ```
-2. Download the M5 data. The files are not in this repository: two are over
-   GitHub's 100 MB file limit, and Kaggle's competition rules don't allow
-   sharing the data. You need a Kaggle account. Accept the rules on the
-   [competition page](https://www.kaggle.com/competitions/m5-forecasting-accuracy/rules)
-   and create an API token (Kaggle → Settings → API → Create New Token). Then,
-   from the project folder:
+2. Unzip the M5 data. The three raw files are in `m5_data.zip` (29 MB, zipped
+   because two of them are over GitHub's 100 MB file limit). From the
+   project folder:
+   ```
+   unzip m5_data.zip
+   ```
+   This puts `sales_train_validation.csv`, `calendar.csv` and
+   `sell_prices.csv` in the project folder, where the notebooks expect them.
+
+   To download them from Kaggle instead, accept the rules on the
+   [competition page](https://www.kaggle.com/competitions/m5-forecasting-accuracy/rules),
+   create an API token (Kaggle → Settings → API → Create New Token), then run:
    ```
    .venv/bin/pip install kaggle
    .venv/bin/kaggle competitions download -c m5-forecasting-accuracy
    unzip m5-forecasting-accuracy.zip sales_train_validation.csv calendar.csv sell_prices.csv
    ```
-   Or download them by hand from the competition's Data tab. Either way, these
-   three files must be in the project folder:
-   `sales_train_validation.csv`, `calendar.csv`, `sell_prices.csv`.
 3. In Jupyter or VS Code, select the `.venv` kernel.
 
 ## How to run
