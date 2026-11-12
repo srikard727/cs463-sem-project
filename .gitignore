@@ -4,7 +4,6 @@ data/
 results/
 *.parquet
 *.pptx
-models/
 *.backup.ipynb
 *.csv
 *.json
@@ -12,3 +11,9 @@ models/
 path/
 .DS_Store
 archive/
+
+# Trained models are recreated by the notebooks; only the final model
+# (XGBoost Tweedie, one per state) is kept in git.
+models/**
+!models/*/
+!models/*/xgb_tweedie.json

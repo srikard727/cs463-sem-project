@@ -31,20 +31,22 @@ ahead**, using only information known on order day.
 ├── 04_Neural_Networks.ipynb         TEMPLATE: MLP and LSTM for one state (edit this one)
 ├── 04_Neural_Networks_CA/TX/WI.ipynb   Saved runs for each state (view only)
 │
+├── 05_Evaluation.ipynb              Compares all 33 models, picks the final one, scores the test set
+│
 ├── src/                             Shared, documented Python code
 │   ├── config.py                    Paths, states and stores, horizon, split dates, seed
 │   ├── data_prep.py                 Loading, cleaning, features, stockout flags, splits
 │   ├── models.py                    Model builders and the HurdleRegressor class
 │   ├── neural.py                    MLP, LSTM, training loop, input preprocessing
-│   └── evaluation.py                Metrics: MAE, RMSE, WAPE, bias
+│   └── evaluation.py                Metrics: MAE, RMSE, WAPE, bias, Poisson deviance, RMSSE, R²
 │
 ├── requirements.txt                 Exact library versions
-├── archive/                         Earlier single-store (CA_1) version and old files, kept for reference
 │
 │   Created by the notebooks (not in git):
 ├── data/processed/<state>/          Cleaned train / validation / test files per store
-├── models/<state>/                  Every trained model for that state
-└── results/<state>/                 Training records and saved validation forecasts
+├── models/<state>/                  The 3 shortlisted models (only xgb_tweedie.json, the final model, is in git)
+├── results/<state>/                 Training records, saved validation and test forecasts
+└── results/evaluation/              Leaderboards, test results and figures from 05
 ```
 
 ### Templates vs. saved runs
@@ -66,8 +68,19 @@ template for a state saves a copy with that state's outputs, such as
    python3 -m venv .venv
    .venv/bin/pip install -r requirements.txt
    ```
-2. Download the M5 data from the Kaggle competition page and put these three
-   files in the project folder:
+2. Download the M5 data. The files are not in this repository: two are over
+   GitHub's 100 MB file limit, and Kaggle's competition rules don't allow
+   sharing the data. You need a Kaggle account. Accept the rules on the
+   [competition page](https://www.kaggle.com/competitions/m5-forecasting-accuracy/rules)
+   and create an API token (Kaggle → Settings → API → Create New Token). Then,
+   from the project folder:
+   ```
+   .venv/bin/pip install kaggle
+   .venv/bin/kaggle competitions download -c m5-forecasting-accuracy
+   unzip m5-forecasting-accuracy.zip sales_train_validation.csv calendar.csv sell_prices.csv
+   ```
+   Or download them by hand from the competition's Data tab. Either way, these
+   three files must be in the project folder:
    `sales_train_validation.csv`, `calendar.csv`, `sell_prices.csv`.
 3. In Jupyter or VS Code, select the `.venv` kernel.
 
@@ -89,6 +102,9 @@ done
 for S in WI TX CA; do
   STATE=$S .venv/bin/jupyter nbconvert --to notebook --execute 04_Neural_Networks.ipynb --output 04_Neural_Networks_$S.ipynb
 done
+
+# 4. Evaluation for all three states (about 1 minute)
+.venv/bin/jupyter nbconvert --to notebook --execute --inplace 05_Evaluation.ipynb
 ```
 
 To run a single state, use one line from a loop, e.g.
@@ -138,11 +154,35 @@ crash on macOS. Each notebook run starts a fresh process, so they never meet.
   (lr 0.001), batch size 4,096, up to 8 epochs. The MLP uses all features; the
   LSTM reads the last 28 known days of raw sales.
 
-## Status
+**Evaluation and model selection** (`05_Evaluation.ipynb`)
+- **Stage 1:** all 33 models (11 types × 3 states) are scored on validation.
+- **Stage 2:** model types are ranked by validation RMSE in each state, and
+  the top 3 by average rank go to the test set with the 28-day-average
+  baseline. The validation winner is the final model. The test set is used
+  once.
+- **Metrics:** RMSE (selection), WAPE (headline), MAE, bias, Poisson
+  deviance, RMSSE and R², all on non-stockout rows. MAPE is left out because
+  most days have 0 sales. MAE-type metrics are not used for selection
+  because they reward forecasts that run low on zero-heavy data.
 
-Data preparation and model training are complete for all three states. The
-test set has not been used yet, and model performance results are not
-reported in this repository yet.
+## Results
+
+The validation winner in the shortlist (XGBoost Tweedie, hurdle model,
+XGBoost squared error) is **XGBoost with Tweedie loss**. Its test scores
+(2015-07-17 to 2016-04-24, non-stockout rows):
+
+| State | RMSE | WAPE | Bias | RMSSE | RMSE vs. 28-day baseline |
+|---|---|---|---|---|---|
+| CA | 2.206 | 66.9% | −1.2% | 0.879 | −7.3% |
+| TX | 1.904 | 69.3% | −0.7% | 0.828 | −8.4% |
+| WI | 2.165 | 66.9% | −2.2% | 0.862 | −9.4% |
+
+- The baseline under-forecasts by 7–9%. The final model is within about 2%
+  of actual sales, which cuts the shelf-price value of under-forecast units
+  by 7–10%.
+- Errors are lowest for regular sellers and Foods (WAPE about 55–60%) and
+  highest for intermittent items and Hobbies (above 100%).
+- Every table and figure is in `results/evaluation/`.
 
 ## References
 
